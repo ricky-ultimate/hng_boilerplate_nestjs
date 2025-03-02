@@ -91,7 +91,7 @@ export class LanguagesController {
     return { status: 200, data: languages };
   }
 
-  @Delete(':id')
+  @Delete('/users/:userId/languages/:languageId')
   @ApiBearerAuth()
   @UseGuards(AuthGuard)
   @ApiOperation({ summary: 'Delete a specific user language by ID' })
@@ -101,10 +101,10 @@ export class LanguagesController {
   @ApiResponse({ status: 401, description: 'Unauthorized access.' })
   @ApiResponse({ status: 403, description: 'User not authorized to delete this language.' })
   @HttpCode(HttpStatus.OK)
-  async deleteUserLanguage(@Param('id') languageId: string, @Request() req) {
-    if (!languageId) {
-      throw new BadRequestException('Invalid language ID provided.');
+  async deleteUserLanguage(@Param('userId') userId: string, @Param('languageId') languageId: string) {
+    if (!userId || !languageId) {
+      throw new BadRequestException('Invalid user ID or language ID.');
     }
-    return await this.languagesService.deleteUserLanguage(languageId, req.user.id);
+    return await this.languagesService.deleteUserLanguage(userId, languageId);
   }
 }
