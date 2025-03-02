@@ -167,22 +167,25 @@ export class LanguagesService {
     return user.languages || [];
   }
 
-  async deleteUserLanguage(languageId: string, userId: string): Promise<{ message: string }> {
-    const user = await this.userRepository.findOne({ where: { id: userId }, relations: ['languages'] });
-    if (!user) {
-      throw new NotFoundException('User not found.');
-    }
+  async deleteUserLanguage(userId: string, languageId: string): Promise<{ message: string }> {
+    const user = await this.userRepository.findOne({
+      where: { id: userId },
+      relations: ['languages'],
+    });
+
+    if (!user) throw new NotFoundException('User not found.');
 
     const language = user.languages.find(lang => lang.id === languageId);
-    if (!language) {
-      throw new NotFoundException('Language not found for this user.');
-    }
+    if (!language) throw new NotFoundException('Language not found for this user.');
 
     try {
-      await this.languageRepository.remove(language);
-      return { message: 'Language successfully deleted for the user.' };
+      // Remove only the relation, NOT the language itself
+      user.languages = user.languages.filter(lang => lang.id !== languageId);
+      await this.userRepository.save(user);
+
+      return { message: 'Language successfully removed from user.' };
     } catch (error) {
-      throw new BadRequestException('Cannot delete language due to dependencies.');
+      throw new BadRequestException('Could not remove language from user.');
     }
   }
 }
