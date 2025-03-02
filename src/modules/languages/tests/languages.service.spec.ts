@@ -167,33 +167,41 @@ describe('LanguagesService', () => {
   });
 
   describe('deleteUserLanguage', () => {
-    it('should delete a user-specific language successfully', async () => {
-      const mockUser = { id: 'user123', languages: [{ id: 'lang123', language: 'English' }] } as User;
-      jest.spyOn(userRepository, 'findOne').mockResolvedValue(mockUser);
-      jest.spyOn(repository, 'remove').mockResolvedValue(null);
+    it('should remove language association from user successfully', async () => {
+      const mockUser = {
+        id: 'user123',
+        languages: [{ id: 'lang123', language: 'English' }],
+      } as User;
 
-      await expect(service.deleteUserLanguage('lang123', 'user123')).resolves.toEqual({
-        message: 'Language successfully deleted for the user.',
+      jest.spyOn(userRepository, 'findOne').mockResolvedValue(mockUser);
+      jest.spyOn(userRepository, 'save').mockResolvedValue(mockUser);
+
+      await expect(service.deleteUserLanguage('user123', 'lang123')).resolves.toEqual({
+        message: 'Language successfully removed from user.',
       });
     });
 
     it('should throw NotFoundException if user does not exist', async () => {
       jest.spyOn(userRepository, 'findOne').mockResolvedValue(null);
-      await expect(service.deleteUserLanguage('lang123', 'user123')).rejects.toThrow(NotFoundException);
+      await expect(service.deleteUserLanguage('user123', 'lang123')).rejects.toThrow(NotFoundException);
     });
 
     it('should throw NotFoundException if language is not found for user', async () => {
       const mockUser = { id: 'user123', languages: [] } as User;
       jest.spyOn(userRepository, 'findOne').mockResolvedValue(mockUser);
-      await expect(service.deleteUserLanguage('lang123', 'user123')).rejects.toThrow(NotFoundException);
+      await expect(service.deleteUserLanguage('user123', 'lang123')).rejects.toThrow(NotFoundException);
     });
 
-    it('should throw BadRequestException if language has dependencies', async () => {
-      const mockUser = { id: 'user123', languages: [{ id: 'lang123', language: 'English' }] } as User;
-      jest.spyOn(userRepository, 'findOne').mockResolvedValue(mockUser);
-      jest.spyOn(repository, 'remove').mockRejectedValue(new Error('Cannot delete'));
+    it('should throw BadRequestException if language association cannot be removed', async () => {
+      const mockUser = {
+        id: 'user123',
+        languages: [{ id: 'lang123', language: 'English' }],
+      } as User;
 
-      await expect(service.deleteUserLanguage('lang123', 'user123')).rejects.toThrow(BadRequestException);
+      jest.spyOn(userRepository, 'findOne').mockResolvedValue(mockUser);
+      jest.spyOn(userRepository, 'save').mockRejectedValue(new Error('Cannot remove association'));
+
+      await expect(service.deleteUserLanguage('user123', 'lang123')).rejects.toThrow(BadRequestException);
     });
   });
 });
